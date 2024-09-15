@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using DotNet.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotNet.Data
@@ -9,5 +10,7 @@ namespace DotNet.Data
             : base(options)
         {
         }
+
+        public DbSet<Letter> Letters { get; set; }
     }
 }
