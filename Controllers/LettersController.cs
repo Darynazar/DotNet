@@ -7,9 +7,12 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using DotNet.Data;
 using DotNet.Models;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DotNet.Controllers
 {
+    [Authorize]
     public class LettersController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -22,7 +25,10 @@ namespace DotNet.Controllers
         // GET: Letters
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Letters.Include(l => l.User);
+            var applicationDbContext = from c in _context.Letters
+                                       select c;
+            applicationDbContext = applicationDbContext.Where(a => a.UserId == User.FindFirstValue(ClaimTypes.NameIdentifier));
+            //applicationDbContext = _context.Docs.Include(d => d.User);
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -48,7 +54,6 @@ namespace DotNet.Controllers
         // GET: Letters/Create
         public IActionResult Create()
         {
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id");
             return View();
         }
 
@@ -65,7 +70,7 @@ namespace DotNet.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", letter.UserId);
+   
             return View(letter);
         }
 
@@ -82,7 +87,10 @@ namespace DotNet.Controllers
             {
                 return NotFound();
             }
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", letter.UserId);
+             if (letter.UserId != User.FindFirstValue(ClaimTypes.NameIdentifier))
+             {
+                return NotFound();
+             }
             return View(letter);
         }
 
@@ -134,6 +142,11 @@ namespace DotNet.Controllers
                 .Include(l => l.User)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (letter == null)
+            {
+                return NotFound();
+            }
+
+            if (letter.UserId != User.FindFirstValue(ClaimTypes.NameIdentifier))
             {
                 return NotFound();
             }
